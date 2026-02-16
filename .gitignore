@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+.env
+.venv
+env/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+
+# Snowflake
+*.p8
+*.pem
+credentials.json
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Local files
+*.local.sql
+config/settings.local.sql
+
+# Logs
+*.log
+logs/

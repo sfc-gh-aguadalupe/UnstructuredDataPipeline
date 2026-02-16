@@ -1,0 +1,11 @@
+# Streamlit in Snowflake Environment Configuration
+# ================================================
+# This file specifies the Python packages required for the Streamlit app
+# when running in Streamlit in Snowflake (SiS).
+
+name: doc_intelligence_app
+channels:
+  - snowflake
+dependencies:
+  - pandas
+  - streamlit

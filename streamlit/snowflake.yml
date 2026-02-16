@@ -1,0 +1,16 @@
+# Streamlit in Snowflake Configuration
+# =====================================
+# Used by snow streamlit deploy command
+
+definition_version: 1
+
+streamlit:
+  name: DOC_INTELLIGENCE_APP
+  database: DOC_INTELLIGENCE
+  schema: RAW
+  query_warehouse: DOC_INTELLIGENCE_WH
+  main_file: app.py
+  pages_dir: pages/
+  env_file: environment.yml
+  additional_source_files:
+    - utils/

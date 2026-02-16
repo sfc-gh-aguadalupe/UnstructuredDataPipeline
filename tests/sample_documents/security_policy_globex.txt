@@ -1,0 +1,152 @@
+INFORMATION SECURITY POLICY
+Document ID: POL-SEC-001
+Version: 2.3
+Effective Date: March 1, 2025
+Last Review: February 15, 2025
+
+GLOBEX INDUSTRIES
+Corporate Security Department
+
+================================================================================
+1. PURPOSE AND SCOPE
+================================================================================
+
+1.1 Purpose
+This Information Security Policy establishes the framework for protecting Globex Industries' information assets from unauthorized access, disclosure, modification, or destruction. This policy applies to all employees, contractors, consultants, and third parties who access company information systems.
+
+1.2 Scope
+This policy covers:
+- All electronic and physical information assets
+- All information systems, networks, and applications
+- All locations where company business is conducted
+- Cloud services and third-party hosted solutions
+
+================================================================================
+2. ROLES AND RESPONSIBILITIES
+================================================================================
+
+2.1 Chief Information Security Officer (CISO)
+- Overall accountability for information security program
+- Approval of security policies and standards
+- Security incident escalation and response coordination
+
+2.2 IT Security Team
+- Implementation of security controls
+- Security monitoring and incident response
+- Vulnerability management and penetration testing
+
+2.3 Department Managers
+- Ensure staff compliance with security policies
+- Identify and classify departmental information assets
+- Report security incidents promptly
+
+2.4 All Employees
+- Protect confidential information in their possession
+- Complete annual security awareness training
+- Report suspected security incidents immediately
+
+================================================================================
+3. DATA CLASSIFICATION
+================================================================================
+
+3.1 Classification Levels
+
+PUBLIC: Information approved for public release
+- Marketing materials, press releases
+- Published financial reports
+
+INTERNAL: Information for internal use only
+- Internal procedures, organizational charts
+- Non-sensitive business communications
+
+CONFIDENTIAL: Sensitive business information
+- Customer data, financial projections
+- Strategic plans, pricing information
+
+RESTRICTED: Highly sensitive information
+- PII (Personally Identifiable Information)
+- Trade secrets, merger/acquisition data
+- Authentication credentials
+
+3.2 Handling Requirements
+
+Each classification level has specific handling requirements for:
+- Storage (encryption requirements)
+- Transmission (secure channels)
+- Disposal (destruction methods)
+- Access control (authorization levels)
+
+================================================================================
+4. ACCESS CONTROL
+================================================================================
+
+4.1 Principles
+- Least privilege: Users receive minimum access needed
+- Need-to-know: Access based on job requirements
+- Separation of duties: Critical functions require multiple approvers
+
+4.2 Authentication Requirements
+- Minimum 12-character passwords with complexity
+- Multi-factor authentication (MFA) for all remote access
+- MFA required for access to Restricted data
+- Session timeout after 15 minutes of inactivity
+
+4.3 Account Management
+- Access reviews conducted quarterly
+- Accounts disabled within 24 hours of termination
+- Privileged accounts require additional approval
+
+================================================================================
+5. INCIDENT RESPONSE
+================================================================================
+
+5.1 Reporting
+All security incidents must be reported to security@globex.com or the IT Security hotline at ext. 5555 within one hour of discovery.
+
+5.2 Incident Categories
+- Category 1 (Critical): Data breach, ransomware, system compromise
+- Category 2 (High): Unauthorized access attempts, malware detection
+- Category 3 (Medium): Policy violations, phishing attempts
+- Category 4 (Low): Security awareness issues
+
+5.3 Response Timeline
+- Category 1: Immediate response, executive notification within 1 hour
+- Category 2: Response within 4 hours
+- Category 3: Response within 24 hours
+- Category 4: Response within 72 hours
+
+================================================================================
+6. COMPLIANCE AND ENFORCEMENT
+================================================================================
+
+6.1 Compliance Requirements
+This policy supports compliance with:
+- GDPR (General Data Protection Regulation)
+- CCPA (California Consumer Privacy Act)
+- SOC 2 Type II
+- ISO 27001
+
+6.2 Policy Violations
+Violations may result in disciplinary action up to and including termination. Intentional violations may be referred for legal action.
+
+6.3 Exceptions
+Policy exceptions require written approval from the CISO and must be documented with compensating controls.
+
+================================================================================
+7. POLICY REVIEW
+================================================================================
+
+This policy is reviewed annually or upon significant changes to:
+- Business operations or technology environment
+- Regulatory requirements
+- Security threat landscape
+
+================================================================================
+DOCUMENT APPROVAL
+================================================================================
+
+Prepared By: Robert Williams, Security Manager
+Reviewed By: Jennifer Martinez, IT Director  
+Approved By: David Thompson, CISO
+
+Next Review Date: February 2026

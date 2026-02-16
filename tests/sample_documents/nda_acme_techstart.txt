@@ -1,0 +1,70 @@
+MUTUAL NON-DISCLOSURE AGREEMENT
+
+This Non-Disclosure Agreement ("Agreement") is entered into as of January 15, 2025, by and between:
+
+DISCLOSING PARTY: Acme Corporation, a Delaware corporation with offices at 123 Innovation Drive, San Francisco, CA 94105 ("Acme")
+
+RECEIVING PARTY: TechStart Inc., a California corporation with offices at 456 Startup Lane, Palo Alto, CA 94301 ("TechStart")
+
+RECITALS
+
+WHEREAS, Acme and TechStart (collectively, the "Parties") wish to explore a potential business relationship relating to cloud data analytics services (the "Purpose"); and
+
+WHEREAS, in connection with the Purpose, each Party may disclose to the other certain confidential and proprietary information;
+
+NOW, THEREFORE, in consideration of the mutual covenants and agreements herein contained, and for other good and valuable consideration, the receipt and sufficiency of which are hereby acknowledged, the Parties agree as follows:
+
+1. DEFINITION OF CONFIDENTIAL INFORMATION
+
+"Confidential Information" means any and all non-public information, including but not limited to:
+(a) Trade secrets, inventions, ideas, processes, formulas, source code, and object code;
+(b) Product specifications, documentation, and roadmaps;
+(c) Customer lists, sales data, and marketing strategies;
+(d) Financial information, pricing data, and business plans;
+(e) Any other information designated as "Confidential" or "Proprietary" by the disclosing Party.
+
+2. OBLIGATIONS OF RECEIVING PARTY
+
+The Receiving Party agrees to:
+(a) Hold all Confidential Information in strict confidence;
+(b) Not disclose Confidential Information to any third parties without prior written consent;
+(c) Use Confidential Information solely for the Purpose;
+(d) Protect Confidential Information using at least the same degree of care used to protect its own confidential information, but in no event less than reasonable care;
+(e) Limit access to Confidential Information to employees and contractors with a need to know.
+
+3. EXCLUSIONS
+
+Confidential Information does not include information that:
+(a) Is or becomes publicly available through no fault of the Receiving Party;
+(b) Was known to the Receiving Party prior to disclosure;
+(c) Is independently developed by the Receiving Party without use of Confidential Information;
+(d) Is rightfully obtained from a third party without restriction.
+
+4. TERM AND TERMINATION
+
+This Agreement shall remain in effect for a period of two (2) years from the Effective Date. The confidentiality obligations shall survive termination for a period of five (5) years.
+
+5. RETURN OF MATERIALS
+
+Upon termination or request, the Receiving Party shall promptly return or destroy all Confidential Information and certify such destruction in writing.
+
+6. NO LICENSE
+
+Nothing in this Agreement grants any license or right to use Confidential Information except as expressly set forth herein.
+
+7. GOVERNING LAW
+
+This Agreement shall be governed by the laws of the State of California, without regard to conflicts of law principles.
+
+8. ENTIRE AGREEMENT
+
+This Agreement constitutes the entire agreement between the Parties concerning the subject matter hereof and supersedes all prior agreements and understandings.
+
+IN WITNESS WHEREOF, the Parties have executed this Agreement as of the date first written above.
+
+ACME CORPORATION                    TECHSTART INC.
+
+By: _________________________       By: _________________________
+Name: Sarah Johnson                 Name: Michael Chen
+Title: Chief Executive Officer      Title: Chief Executive Officer
+Date: January 15, 2025              Date: January 15, 2025

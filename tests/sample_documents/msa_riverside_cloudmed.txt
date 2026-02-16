@@ -1,0 +1,173 @@
+MASTER SERVICES AGREEMENT
+
+This Master Services Agreement ("Agreement") is made and entered into as of December 1, 2024 ("Effective Date") by and between:
+
+CLIENT: Riverside Healthcare Systems
+Address: 789 Medical Center Blvd, Chicago, IL 60601
+Contact: Dr. Patricia Reynolds, Chief Information Officer
+
+PROVIDER: CloudMed Solutions LLC
+Address: 321 Technology Park, Austin, TX 78701  
+Contact: Thomas Wright, VP Enterprise Sales
+
+================================================================================
+1. SERVICES
+================================================================================
+
+1.1 Scope of Services
+Provider agrees to provide the following services to Client:
+
+(a) Healthcare Data Platform
+- Cloud-hosted data warehouse for clinical and operational data
+- Real-time analytics and reporting dashboards
+- HIPAA-compliant data storage and processing
+
+(b) Integration Services
+- EHR system integration (Epic, Cerner, Meditech)
+- Medical device data connectivity
+- Third-party application APIs
+
+(c) Professional Services
+- Implementation and configuration
+- Data migration and validation
+- Training and change management
+
+1.2 Service Levels
+Provider commits to the following service levels:
+- Platform Availability: 99.9% uptime
+- Support Response: Critical issues within 1 hour
+- Data Recovery: RPO < 1 hour, RTO < 4 hours
+
+================================================================================
+2. TERM AND TERMINATION
+================================================================================
+
+2.1 Initial Term
+This Agreement shall commence on the Effective Date and continue for an initial term of three (3) years.
+
+2.2 Renewal
+This Agreement shall automatically renew for successive one (1) year periods unless either party provides written notice of non-renewal at least ninety (90) days prior to the end of the then-current term.
+
+2.3 Termination for Cause
+Either party may terminate this Agreement upon thirty (30) days written notice if the other party materially breaches this Agreement and fails to cure such breach within the notice period.
+
+2.4 Termination for Convenience
+Client may terminate this Agreement for convenience upon one hundred eighty (180) days prior written notice, subject to payment of early termination fees as specified in Schedule B.
+
+================================================================================
+3. FEES AND PAYMENT
+================================================================================
+
+3.1 Fees
+Client agrees to pay the fees set forth in Schedule A:
+
+Platform Subscription:        $450,000 per year
+Integration Services:         $125,000 (one-time)
+Professional Services:        $275/hour
+Annual Support & Maintenance: $85,000 per year
+
+3.2 Payment Terms
+- Subscription fees billed annually in advance
+- Professional services billed monthly in arrears
+- Payment due within thirty (30) days of invoice
+- Late payments subject to 1.5% monthly interest
+
+3.3 Price Adjustments
+Provider may increase subscription fees by up to 5% annually upon sixty (60) days written notice prior to renewal.
+
+================================================================================
+4. DATA PROTECTION AND SECURITY
+================================================================================
+
+4.1 HIPAA Compliance
+Provider shall maintain compliance with HIPAA Privacy Rule, Security Rule, and Breach Notification Rule. A Business Associate Agreement is attached as Schedule C.
+
+4.2 Data Ownership
+All Client data remains the property of Client. Provider acquires no rights to Client data except as necessary to perform the Services.
+
+4.3 Security Measures
+Provider shall implement and maintain:
+- SOC 2 Type II certified data centers
+- End-to-end encryption (TLS 1.3, AES-256)
+- Multi-factor authentication
+- Regular penetration testing and vulnerability assessments
+
+4.4 Data Location
+All Client data shall be stored and processed within the United States.
+
+4.5 Breach Notification
+Provider shall notify Client of any security breach affecting Client data within twenty-four (24) hours of discovery.
+
+================================================================================
+5. INTELLECTUAL PROPERTY
+================================================================================
+
+5.1 Provider IP
+Provider retains all rights to its platform, software, methodologies, and pre-existing intellectual property.
+
+5.2 Client IP
+Client retains all rights to its data, configurations, and custom developments funded by Client.
+
+5.3 License Grant
+Provider grants Client a non-exclusive, non-transferable license to use the platform during the term of this Agreement.
+
+================================================================================
+6. WARRANTIES AND LIMITATIONS
+================================================================================
+
+6.1 Provider Warranties
+Provider warrants that:
+(a) Services will be performed in a professional manner
+(b) Platform will materially conform to documentation
+(c) Provider has authority to enter this Agreement
+
+6.2 Disclaimer
+EXCEPT AS EXPRESSLY SET FORTH HEREIN, PROVIDER DISCLAIMS ALL WARRANTIES, EXPRESS OR IMPLIED, INCLUDING WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE.
+
+6.3 Limitation of Liability
+NEITHER PARTY SHALL BE LIABLE FOR INDIRECT, INCIDENTAL, SPECIAL, OR CONSEQUENTIAL DAMAGES. PROVIDER'S TOTAL LIABILITY SHALL NOT EXCEED FEES PAID BY CLIENT IN THE TWELVE (12) MONTHS PRECEDING THE CLAIM.
+
+================================================================================
+7. INSURANCE
+================================================================================
+
+Provider shall maintain:
+- Commercial General Liability: $2,000,000 per occurrence
+- Professional Liability: $5,000,000 per occurrence
+- Cyber Liability: $10,000,000 per occurrence
+- Workers Compensation: As required by law
+
+================================================================================
+8. GENERAL PROVISIONS
+================================================================================
+
+8.1 Governing Law
+This Agreement shall be governed by the laws of the State of Illinois.
+
+8.2 Dispute Resolution
+Disputes shall be resolved through binding arbitration in Chicago, IL under AAA Commercial Rules.
+
+8.3 Entire Agreement
+This Agreement, including all Schedules, constitutes the entire agreement between the parties.
+
+8.4 Amendment
+This Agreement may only be amended by written agreement signed by both parties.
+
+================================================================================
+SIGNATURES
+================================================================================
+
+RIVERSIDE HEALTHCARE SYSTEMS        CLOUDMED SOLUTIONS LLC
+
+By: _________________________       By: _________________________
+Name: Dr. Patricia Reynolds         Name: Thomas Wright
+Title: Chief Information Officer    Title: VP Enterprise Sales
+Date: December 1, 2024              Date: December 1, 2024
+
+================================================================================
+SCHEDULES
+================================================================================
+Schedule A - Pricing and Fees
+Schedule B - Service Level Agreement
+Schedule C - Business Associate Agreement
+Schedule D - Statement of Work
