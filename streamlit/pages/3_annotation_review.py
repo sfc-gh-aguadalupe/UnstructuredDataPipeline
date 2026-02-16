@@ -4,6 +4,7 @@ Annotation Review Page
 Review and approve/reject LLM annotations.
 """
 
+import json
 import streamlit as st
 from utils.snowflake_conn import get_connection, run_query
 
@@ -117,8 +118,19 @@ if conn:
                     st.markdown(f"**Summary:** {row['SUMMARY']}" if row['SUMMARY'] else "No summary")
                     
                     if row['TAGS']:
-                        tags = row['TAGS'] if isinstance(row['TAGS'], list) else []
-                        st.markdown(f"**Tags:** {', '.join([f'`{t}`' for t in tags])}")
+                        # Handle VARIANT/JSON tags from Snowflake
+                        tags_raw = row['TAGS']
+                        if isinstance(tags_raw, list):
+                            tags = tags_raw
+                        elif isinstance(tags_raw, str):
+                            try:
+                                tags = json.loads(tags_raw)
+                            except json.JSONDecodeError:
+                                tags = []
+                        else:
+                            tags = []
+                        if tags:
+                            st.markdown(f"**Tags:** {', '.join([f'`{t}`' for t in tags])}")
                 
                 with content_col2:
                     st.markdown(f"**Model:** {row['MODEL_NAME']}")

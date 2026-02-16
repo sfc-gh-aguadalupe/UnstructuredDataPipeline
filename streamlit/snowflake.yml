@@ -13,4 +13,6 @@ streamlit:
   pages_dir: pages/
   env_file: environment.yml
   additional_source_files:
-    - utils/
+    - utils/snowflake_conn.py
+    - utils/search_utils.py
+    - utils/annotation_utils.py

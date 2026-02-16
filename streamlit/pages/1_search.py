@@ -71,26 +71,27 @@ if conn:
             # Escape query for SQL
             safe_query = search_query.replace("'", "''")
             
+            # Build JSON options string
+            search_options = f'{{"query": "{safe_query}", "columns": ["document_id", "chunk_id", "file_name", "category", "chunk_text", "summary", "tags", "file_url"], "limit": {max_results}}}'
+            
             search_sql = f"""
             SELECT 
-                document_id::INT as document_id,
-                chunk_id::INT as chunk_id,
-                file_name::VARCHAR as file_name,
-                category::VARCHAR as category,
-                LEFT(chunk_text::VARCHAR, 300) as preview,
-                summary::VARCHAR as summary,
-                tags::VARCHAR as tags,
-                file_url::VARCHAR as file_url
-            FROM TABLE(
-                SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
-                    'DOC_INTELLIGENCE.PROCESSED.DOCUMENT_SEARCH_SERVICE',
-                    {{
-                        'query': '{safe_query}',
-                        'columns': ['document_id', 'chunk_id', 'file_name', 'category', 'chunk_text', 'summary', 'tags', 'file_url'],
-                        'limit': {max_results}
-                    }}
-                )
-            )
+                result.value:document_id::INT as document_id,
+                result.value:chunk_id::INT as chunk_id,
+                result.value:file_name::VARCHAR as file_name,
+                result.value:category::VARCHAR as category,
+                LEFT(result.value:chunk_text::VARCHAR, 300) as preview,
+                result.value:summary::VARCHAR as summary,
+                result.value:tags::VARCHAR as tags,
+                result.value:file_url::VARCHAR as file_url
+            FROM (
+                SELECT PARSE_JSON(
+                    SNOWFLAKE.CORTEX.SEARCH_PREVIEW(
+                        'DOC_INTELLIGENCE.PROCESSED.DOCUMENT_SEARCH_SERVICE',
+                        '{search_options}'
+                    )
+                ):results AS results
+            ), LATERAL FLATTEN(input => results) AS result
             """
             
             results = run_query(search_sql)
