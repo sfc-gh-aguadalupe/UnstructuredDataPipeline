@@ -4,6 +4,7 @@ Document Viewer Page
 View document details, chunks, and annotations.
 """
 
+import json
 import streamlit as st
 from utils.snowflake_conn import get_connection, run_query
 
@@ -114,7 +115,16 @@ if conn:
                     with col1:
                         st.markdown("### Tags")
                         if row['TAGS']:
-                            tags = row['TAGS'] if isinstance(row['TAGS'], list) else []
+                            tags_raw = row['TAGS']
+                            if isinstance(tags_raw, list):
+                                tags = tags_raw
+                            elif isinstance(tags_raw, str):
+                                try:
+                                    tags = json.loads(tags_raw)
+                                except json.JSONDecodeError:
+                                    tags = []
+                            else:
+                                tags = []
                             for tag in tags:
                                 st.markdown(f"- `{tag}`")
                         else:
@@ -122,15 +132,34 @@ if conn:
                         
                         st.markdown("### Key Terms")
                         if row['KEY_TERMS']:
-                            terms = row['KEY_TERMS'] if isinstance(row['KEY_TERMS'], list) else []
-                            st.write(", ".join([f"`{t}`" for t in terms]))
+                            terms_raw = row['KEY_TERMS']
+                            if isinstance(terms_raw, list):
+                                terms = terms_raw
+                            elif isinstance(terms_raw, str):
+                                try:
+                                    terms = json.loads(terms_raw)
+                                except json.JSONDecodeError:
+                                    terms = []
+                            else:
+                                terms = []
+                            if terms:
+                                st.write(", ".join([f"`{t}`" for t in terms]))
                         else:
                             st.caption("No key terms")
                     
                     with col2:
                         st.markdown("### Entities")
                         if row['ENTITIES']:
-                            entities = row['ENTITIES'] if isinstance(row['ENTITIES'], dict) else {}
+                            entities_raw = row['ENTITIES']
+                            if isinstance(entities_raw, dict):
+                                entities = entities_raw
+                            elif isinstance(entities_raw, str):
+                                try:
+                                    entities = json.loads(entities_raw)
+                                except json.JSONDecodeError:
+                                    entities = {}
+                            else:
+                                entities = {}
                             for entity_type, values in entities.items():
                                 if values:
                                     st.markdown(f"**{entity_type.title()}:** {', '.join(values)}")
