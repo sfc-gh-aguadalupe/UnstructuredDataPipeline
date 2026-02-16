@@ -114,8 +114,11 @@ if conn:
                     
                     with col1:
                         st.markdown("### Tags")
-                        if row['TAGS']:
-                            tags_raw = row['TAGS']
+                        # Debug: show raw value and type
+                        st.caption(f"DEBUG: type={type(row['TAGS'])}, value={repr(row['TAGS'])[:100]}")
+                        tags_raw = row['TAGS']
+                        tags = []
+                        if tags_raw is not None:
                             if isinstance(tags_raw, list):
                                 tags = tags_raw
                             elif isinstance(tags_raw, str):
@@ -124,7 +127,12 @@ if conn:
                                 except json.JSONDecodeError:
                                     tags = []
                             else:
-                                tags = []
+                                # Try string conversion then parse
+                                try:
+                                    tags = json.loads(str(tags_raw))
+                                except:
+                                    tags = []
+                        if tags:
                             for tag in tags:
                                 st.markdown(f"- `{tag}`")
                         else:
