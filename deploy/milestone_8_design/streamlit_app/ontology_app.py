@@ -109,13 +109,14 @@ def get_ontology_list():
     """Get list of available ontologies."""
     query = """
     SELECT 
-        ONTOLOGY_DATA:name::STRING as name,
-        ONTOLOGY_DATA:"@context"."ent"::STRING as namespace,
-        ONTOLOGY_DATA:version::STRING as version,
-        ARRAY_SIZE(ONTOLOGY_DATA:classes) as class_count,
-        LOADED_AT
+        ONTOLOGY_NAME as name,
+        JSON_LD:"@context"."ent"::STRING as namespace,
+        VERSION as version,
+        CLASS_COUNT as class_count,
+        IMPORTED_AT
     FROM DOC_INTELLIGENCE.EXPERIMENT.ONTOLOGY_CACHE
-    ORDER BY LOADED_AT DESC
+    WHERE IS_CURRENT = TRUE
+    ORDER BY IMPORTED_AT DESC
     """
     return run_query(query)
 
@@ -149,8 +150,8 @@ def get_ontology_classes(ontology_name: str):
         c.value:"rdfs:subClassOf":"@id"::STRING as parent_class,
         c.value:"skos:altLabel" as synonyms
     FROM DOC_INTELLIGENCE.EXPERIMENT.ONTOLOGY_CACHE,
-         LATERAL FLATTEN(input => ONTOLOGY_DATA:classes) c
-    WHERE ONTOLOGY_DATA:name::STRING = '{ontology_name}'
+         LATERAL FLATTEN(input => JSON_LD:classes) c
+    WHERE ONTOLOGY_NAME = '{ontology_name}'
     ORDER BY class_id
     """
     return run_query(query)
@@ -161,14 +162,12 @@ def get_sample_documents():
     """Get sample documents for annotation testing."""
     query = """
     SELECT 
-        d.DOC_ID,
+        d.DOCUMENT_ID as DOC_ID,
         d.FILE_NAME,
-        d.PROCESSING_STATUS,
-        LEFT(c.EXTRACTED_TEXT, 500) as text_preview
+        d.STATUS as PROCESSING_STATUS
     FROM DOC_INTELLIGENCE.RAW.DOCUMENTS d
-    LEFT JOIN DOC_INTELLIGENCE.PROCESSED.DOCUMENT_CONTENT c ON d.DOC_ID = c.DOC_ID
-    WHERE d.PROCESSING_STATUS = 'COMPLETED'
-    ORDER BY d.CREATED_AT DESC
+    WHERE d.STATUS = 'ANNOTATED'
+    ORDER BY d.ANNOTATED_AT DESC
     LIMIT 20
     """
     return run_query(query)
@@ -179,16 +178,16 @@ def get_experiment_annotations():
     """Get annotations from the experiment."""
     query = """
     SELECT 
-        ea.DOC_ID,
+        ea.DOCUMENT_ID,
         d.FILE_NAME,
-        ea.PRIMARY_TYPE,
-        ea.FULL_HIERARCHY,
-        ea.CONFIDENCE_SCORE,
-        ea.REASONING,
-        ea.ANNOTATED_AT
+        ea.CATEGORY_LABEL,
+        ea.CATEGORY_PATH,
+        ea.CONFIDENCE,
+        ea.SUMMARY,
+        ea.CREATED_AT
     FROM DOC_INTELLIGENCE.EXPERIMENT.EXPERIMENT_ANNOTATIONS ea
-    JOIN DOC_INTELLIGENCE.RAW.DOCUMENTS d ON ea.DOC_ID = d.DOC_ID
-    ORDER BY ea.ANNOTATED_AT DESC
+    JOIN DOC_INTELLIGENCE.RAW.DOCUMENTS d ON ea.DOCUMENT_ID = d.DOCUMENT_ID
+    ORDER BY ea.CREATED_AT DESC
     """
     return run_query(query)
 
@@ -215,7 +214,7 @@ with st.sidebar:
         st.markdown(f"""
         **Version:** {ont_info['VERSION']}  
         **Classes:** {ont_info['CLASS_COUNT']}  
-        **Loaded:** {ont_info['LOADED_AT']}
+        **Loaded:** {ont_info['IMPORTED_AT']}
         """)
     else:
         selected_ontology = None
@@ -255,8 +254,11 @@ if page == "📊 Overview":
         with col2:
             tag_groups_json = get_tag_groups(selected_ontology)
             if tag_groups_json:
-                tag_groups = json.loads(tag_groups_json)
-                st.metric("Tag Groups", len(tag_groups))
+                try:
+                    tag_groups = json.loads(tag_groups_json)
+                    st.metric("Tag Groups", len(tag_groups))
+                except (json.JSONDecodeError, TypeError):
+                    st.metric("Tag Groups", 0)
             else:
                 st.metric("Tag Groups", 0)
         
@@ -264,8 +266,8 @@ if page == "📊 Overview":
             st.metric("Annotations", len(annotations))
         
         with col4:
-            if not annotations.empty:
-                avg_conf = annotations['CONFIDENCE_SCORE'].mean()
+            if not annotations.empty and 'CONFIDENCE' in annotations.columns:
+                avg_conf = annotations['CONFIDENCE'].mean()
                 st.metric("Avg Confidence", f"{avg_conf:.1%}")
             else:
                 st.metric("Avg Confidence", "N/A")
@@ -367,8 +369,7 @@ elif page == "🌳 Hierarchy":
             
             st.dataframe(
                 display_df,
-                use_container_width=True,
-                hide_index=True
+                use_container_width=True
             )
     else:
         st.warning("Please select an ontology from the sidebar")
@@ -381,7 +382,10 @@ elif page == "🏷️ Tag Groups":
         tag_groups_json = get_tag_groups(selected_ontology)
         
         if tag_groups_json:
-            tag_groups = json.loads(tag_groups_json)
+            try:
+                tag_groups = json.loads(tag_groups_json)
+            except (json.JSONDecodeError, TypeError):
+                tag_groups = []
             
             st.markdown("""
             Tag groups define **mutually exclusive categories**. A document can only 
@@ -446,12 +450,6 @@ elif page == "✨ Annotate":
             with st.expander("Document Preview", expanded=True):
                 st.markdown(f"**File:** {doc_row['FILE_NAME']}")
                 st.markdown(f"**Status:** {doc_row['PROCESSING_STATUS']}")
-                st.text_area(
-                    "Content Preview (first 500 chars)",
-                    value=doc_row['TEXT_PREVIEW'] or "No content available",
-                    height=150,
-                    disabled=True
-                )
             
             # Annotate button
             if st.button("🚀 Annotate with Ontology", type="primary", use_container_width=True):
@@ -471,22 +469,23 @@ elif page == "✨ Annotate":
                         # Get the annotation result
                         annotation_query = f"""
                         SELECT * FROM DOC_INTELLIGENCE.EXPERIMENT.EXPERIMENT_ANNOTATIONS
-                        WHERE DOC_ID = '{selected_doc_id}'
-                        ORDER BY ANNOTATED_AT DESC
+                        WHERE DOCUMENT_ID = {selected_doc_id}
+                        ORDER BY CREATED_AT DESC
                         LIMIT 1
                         """
                         annotation = run_query(annotation_query)
                         
                         if not annotation.empty:
                             ann = annotation.iloc[0]
+                            conf_val = f"{ann['CONFIDENCE']:.1%}" if pd.notna(ann.get('CONFIDENCE')) else "N/A"
                             
                             st.markdown(f"""
                             <div class="annotation-result">
                                 <h3>📄 Annotation Result</h3>
-                                <p><strong>Primary Type:</strong> {ann['PRIMARY_TYPE']}</p>
-                                <p><strong>Full Hierarchy:</strong> {ann['FULL_HIERARCHY']}</p>
-                                <p><strong>Confidence:</strong> {ann['CONFIDENCE_SCORE']:.1%}</p>
-                                <p><strong>Reasoning:</strong> {ann['REASONING']}</p>
+                                <p><strong>Category:</strong> {ann.get('CATEGORY_LABEL', 'N/A')}</p>
+                                <p><strong>Full Hierarchy:</strong> {ann.get('CATEGORY_PATH', 'N/A')}</p>
+                                <p><strong>Confidence:</strong> {conf_val}</p>
+                                <p><strong>Summary:</strong> {ann.get('SUMMARY', 'N/A')}</p>
                             </div>
                             """, unsafe_allow_html=True)
                             
@@ -514,30 +513,36 @@ elif page == "📋 Results":
             st.metric("Total Annotations", len(annotations))
         
         with col2:
-            avg_confidence = annotations['CONFIDENCE_SCORE'].mean()
-            st.metric("Average Confidence", f"{avg_confidence:.1%}")
+            if 'CONFIDENCE' in annotations.columns:
+                avg_confidence = annotations['CONFIDENCE'].mean()
+                st.metric("Average Confidence", f"{avg_confidence:.1%}")
+            else:
+                st.metric("Average Confidence", "N/A")
         
         with col3:
-            unique_types = annotations['PRIMARY_TYPE'].nunique()
-            st.metric("Unique Types", unique_types)
+            if 'CATEGORY_LABEL' in annotations.columns:
+                unique_types = annotations['CATEGORY_LABEL'].nunique()
+                st.metric("Unique Types", unique_types)
+            else:
+                st.metric("Unique Types", 0)
         
         st.markdown("---")
         
         # Results table
         st.subheader("All Annotations")
         
-        display_df = annotations[['FILE_NAME', 'PRIMARY_TYPE', 'FULL_HIERARCHY', 
-                                   'CONFIDENCE_SCORE', 'ANNOTATED_AT']].copy()
-        display_df['CONFIDENCE_SCORE'] = display_df['CONFIDENCE_SCORE'].apply(lambda x: f"{x:.1%}")
+        display_df = annotations[['FILE_NAME', 'CATEGORY_LABEL', 'CATEGORY_PATH', 
+                                   'CONFIDENCE', 'CREATED_AT']].copy()
+        display_df['CONFIDENCE'] = display_df['CONFIDENCE'].apply(lambda x: f"{x:.1%}" if pd.notna(x) else "N/A")
         display_df.columns = ['File', 'Type', 'Hierarchy', 'Confidence', 'Annotated']
         
-        st.dataframe(display_df, use_container_width=True, hide_index=True)
+        st.dataframe(display_df, use_container_width=True)
         
         st.markdown("---")
         
         # Distribution chart
         st.subheader("Type Distribution")
-        type_counts = annotations['PRIMARY_TYPE'].value_counts()
+        type_counts = annotations['CATEGORY_LABEL'].value_counts()
         st.bar_chart(type_counts)
         
         # Detailed view
@@ -549,14 +554,15 @@ elif page == "📋 Results":
                 col1, col2 = st.columns([1, 2])
                 
                 with col1:
-                    st.markdown(f"**Type:** {ann['PRIMARY_TYPE']}")
-                    st.markdown(f"**Confidence:** {ann['CONFIDENCE_SCORE']:.1%}")
-                    st.markdown(f"**Annotated:** {ann['ANNOTATED_AT']}")
+                    st.markdown(f"**Type:** {ann['CATEGORY_LABEL']}")
+                    conf_val = f"{ann['CONFIDENCE']:.1%}" if pd.notna(ann['CONFIDENCE']) else "N/A"
+                    st.markdown(f"**Confidence:** {conf_val}")
+                    st.markdown(f"**Annotated:** {ann['CREATED_AT']}")
                 
                 with col2:
                     st.markdown(f"**Hierarchy:**")
-                    st.code(ann['FULL_HIERARCHY'])
-                    st.markdown(f"**Reasoning:** {ann['REASONING']}")
+                    st.code(ann['CATEGORY_PATH'])
+                    st.markdown(f"**Summary:** {ann['SUMMARY']}")
     else:
         st.info("No annotations yet. Go to the 'Annotate' page to create some!")
         
