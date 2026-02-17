@@ -1,6 +1,6 @@
 # Document Intelligence Pipeline
 
-A Snowflake Cortex-powered pipeline for document classification, annotation, and semantic search.
+A Snowflake Cortex-powered pipeline for document classification, annotation, and semantic search with enterprise ontology support.
 
 ## Architecture
 
@@ -16,10 +16,10 @@ A Snowflake Cortex-powered pipeline for document classification, annotation, and
 └────────┬────────┘     └──────────────────┘     └─────────────────┘
          │
          ▼
-┌─────────────────┐
-│    Streamlit    │
-│    Dashboard    │
-└─────────────────┘
+┌─────────────────┐     ┌──────────────────┐
+│    Streamlit    │     │  Ontology Demo   │  (Milestone 8)
+│    Dashboard    │     │    Streamlit     │
+└─────────────────┘     └──────────────────┘
 ```
 
 ## Features
@@ -31,30 +31,31 @@ A Snowflake Cortex-powered pipeline for document classification, annotation, and
 - **Hybrid Search**: Cortex Search Service with semantic + lexical search
 - **Faceted Filtering**: Filter by category, file type, source, review status
 - **Dashboard**: Streamlit app for search, review, and analytics
+- **Enterprise Ontology** (Milestone 8): JSON-LD ontology support with hierarchical classification
 
 ## Project Structure
 
 ```
 doc-intelligence-pipeline/
-├── config/                 # Environment settings
+├── config/                       # Environment settings
 │   └── settings.sql
-├── setup/                  # Database, stages, warehouse setup
+├── setup/                        # Database, stages, warehouse setup
 │   ├── 01_database_setup.sql
 │   ├── 02_warehouse_setup.sql
 │   ├── 03_external_stage_setup.sql
 │   ├── 04_internal_stage_setup.sql
 │   └── 05_ingestion_sources.sql
-├── semantic_model/         # Taxonomy, tags, glossary
+├── semantic_model/               # Taxonomy, tags, glossary
 │   ├── 01_basic_tables.sql
 │   ├── 02_seed_categories.sql
 │   ├── 03_seed_tags.sql
 │   └── 04_seed_glossary.sql
-├── tables/                 # Document and annotation tables
+├── tables/                       # Document and annotation tables
 │   ├── 01_raw_documents.sql
 │   ├── 02_processed_chunks.sql
 │   ├── 03_annotations.sql
 │   └── 04_vectors.sql
-├── procedures/             # Stored procedures for pipeline
+├── procedures/                   # Stored procedures for pipeline
 │   ├── 01_register_new_documents.sql
 │   ├── 02_parse_document.sql
 │   ├── 03_run_ingestion.sql
@@ -62,14 +63,16 @@ doc-intelligence-pipeline/
 │   ├── 05_annotate_document.sql
 │   ├── 06_run_annotation.sql
 │   └── 07_full_pipeline.sql
-├── search/                 # Cortex Search Service
+├── search/                       # Cortex Search Service
 │   ├── 01_searchable_view.sql
 │   ├── 02_cortex_search_service.sql
 │   └── 03_search_helpers.sql
-├── analytics/              # Metrics and reporting views (Milestone 8)
-├── streamlit/              # Dashboard application
+├── streamlit/                    # Main dashboard application
 │   ├── app.py
+│   ├── environment.yml
 │   ├── requirements.txt
+│   ├── snowflake.yml
+│   ├── DEPLOY.md
 │   ├── pages/
 │   │   ├── 1_search.py
 │   │   ├── 2_document_viewer.py
@@ -80,9 +83,35 @@ doc-intelligence-pipeline/
 │       ├── snowflake_conn.py
 │       ├── annotation_utils.py
 │       └── search_utils.py
-└── deploy/                 # Deployment scripts by milestone
-    ├── deploy_all.sql
-    └── milestone_1-8.sql
+├── tests/                        # Test files
+│   └── README.md
+├── deploy/                       # Deployment scripts by milestone
+│   ├── deploy_all.sql
+│   ├── deploy_streamlit.sql
+│   ├── milestone_1.sql           # Database & infrastructure
+│   ├── milestone_2.sql           # Semantic model (flat taxonomy)
+│   ├── milestone_3.sql           # Document tables
+│   ├── milestone_4.sql           # Ingestion pipeline
+│   ├── milestone_5.sql           # Annotation engine
+│   ├── milestone_6.sql           # Cortex Search
+│   ├── milestone_7.sql           # Streamlit dashboard
+│   └── milestone_8_design/       # Enterprise ontology (JSON-LD)
+│       ├── README.md             # Full design document
+│       ├── EXECUTIVE_SUMMARY.md
+│       ├── sql/
+│       │   ├── 01_create_schema.sql
+│       │   ├── 02_ontology_tables.sql
+│       │   ├── 03_sample_ontology.sql
+│       │   ├── 04_transform_functions.sql
+│       │   ├── 05_annotate_procedure.sql
+│       │   ├── 06_demo_queries.sql
+│       │   └── deploy_experiment.sql
+│       └── streamlit_app/
+│           ├── ontology_app.py   # Ontology demo Streamlit app
+│           ├── environment.yml
+│           └── README.md
+├── cleanup.sql                   # Database cleanup script
+└── reset_data.sql                # Data reset script
 ```
 
 ## Milestones
@@ -97,7 +126,7 @@ doc-intelligence-pipeline/
 | 5 | Annotation Engine | ✅ | LLM-based classification with Cortex |
 | 6 | Cortex Search | ✅ | Hybrid search service with facets |
 | 7 | Streamlit Dashboard | ✅ | UI for search, review, analytics |
-| 8 | Advanced Semantic | ⏳ | Hierarchical taxonomy, relationships |
+| 8 | Enterprise Ontology | ✅ | JSON-LD ontology with hierarchical taxonomy |
 
 ## Quick Start
 
@@ -142,11 +171,88 @@ SELECT * FROM TABLE(
 );
 ```
 
-### 5. Run Streamlit App
+### 5. Deploy Streamlit Dashboard
 ```bash
+# Deploy main dashboard to Snowflake
 cd streamlit
-pip install -r requirements.txt
-streamlit run app.py
+snow streamlit deploy --connection <connection_name>
+```
+
+## Milestone 8: Enterprise Ontology (JSON-LD)
+
+Milestone 8 introduces enterprise ontology support using JSON-LD format. This enables:
+
+- **Hierarchical Classification**: Documents classified into a tree structure (e.g., `Legal Document > Contract > NDA`)
+- **Tag Groups with Mutual Exclusivity**: Rules like "select ONE confidentiality level" or "select ALL applicable compliance frameworks"
+- **Synonym Support**: Alternative labels for categories (e.g., NDA = "Confidentiality Agreement")
+- **JSON-LD Format**: Native semantic web format for ontology storage and exchange
+
+### Deploy Milestone 8 Experiment
+```sql
+-- Deploy the experiment schema and components
+!source deploy/milestone_8_design/sql/deploy_experiment.sql
+```
+
+### Deploy Ontology Demo App
+```bash
+# Upload the ontology demo Streamlit app
+snow object stage copy deploy/milestone_8_design/streamlit_app/ontology_app.py \
+    @DOC_INTELLIGENCE.EXPERIMENT.STREAMLIT_STAGE/ontology_app/ \
+    --overwrite --connection <connection_name>
+```
+
+### Ontology Demo Features
+
+The Milestone 8 Streamlit app (`ONTOLOGY_ANNOTATION_DEMO`) showcases:
+
+| Page | Description |
+|------|-------------|
+| Ontology Browser | Explore class hierarchy, synonyms, and suggested tags |
+| Tag Groups | View mutual exclusivity rules for tag selection |
+| Annotate Documents | Run ontology-based annotation on documents |
+| Results | View hierarchical classification results |
+| Compare Methods | Side-by-side comparison of flat vs ontology annotation |
+
+### Sample Ontology Structure
+
+```
+Document (root)
+├── Legal Document
+│   ├── Contract
+│   │   ├── NDA (Confidentiality Agreement)
+│   │   ├── MSA (Framework Agreement)
+│   │   ├── SOW (Work Order)
+│   │   └── Employment Agreement
+│   └── Policy
+│       ├── Security Policy
+│       ├── HR Policy
+│       └── Privacy Policy
+├── Financial Document
+│   ├── Quarterly Report (10-Q)
+│   └── Annual Report (10-K)
+├── Technical Document
+│   ├── PRD (Requirements Doc)
+│   ├── Architecture Document
+│   └── API Documentation
+└── Healthcare Document
+    ├── Medical Record
+    └── BAA (HIPAA BAA)
+```
+
+### Annotate with Ontology
+```sql
+-- Annotate a document using the enterprise ontology
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(3, 'EnterpriseDocumentOntology');
+
+-- View results with hierarchical path
+SELECT 
+    d.file_name,
+    e.category_path,
+    e.category_label,
+    e.confidence,
+    e.tags
+FROM DOC_INTELLIGENCE.EXPERIMENT.EXPERIMENT_ANNOTATIONS e
+JOIN DOC_INTELLIGENCE.RAW.DOCUMENTS d ON e.document_id = d.document_id;
 ```
 
 ## Key Components
@@ -161,6 +267,7 @@ streamlit run app.py
 | `RAW.RUN_INGESTION(source, max)` | Full ingestion pipeline |
 | `PROCESSED.RUN_ANNOTATION(max)` | Batch annotation |
 | `RAW.FULL_PIPELINE(source, max)` | Complete end-to-end pipeline |
+| `EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(doc_id, ontology)` | Ontology-based annotation (M8) |
 
 ### Document Status Flow
 ```
@@ -169,8 +276,9 @@ PENDING → PROCESSING → PARSED → ANNOTATED → COMPLETED
               FAILED              FAILED
 ```
 
-### Streamlit Pages
+### Streamlit Apps
 
+#### Main Dashboard (`streamlit/`)
 | Page | Description |
 |------|-------------|
 | Home | Dashboard with metrics and quick actions |
@@ -179,6 +287,15 @@ PENDING → PROCESSING → PARSED → ANNOTATED → COMPLETED
 | Annotation Review | Approve/reject LLM annotations |
 | Analytics | Processing stats and insights |
 | Taxonomy Manager | Manage categories, tags, glossary |
+
+#### Ontology Demo (`deploy/milestone_8_design/streamlit_app/`)
+| Page | Description |
+|------|-------------|
+| Ontology Browser | Explore JSON-LD ontology hierarchy |
+| Tag Groups | View tag group rules and exclusivity |
+| Annotate | Run ontology-based document annotation |
+| Results | View annotation results with hierarchy |
+| Compare | Flat vs ontology annotation comparison |
 
 ## How the Semantic Model Works in Annotation
 
@@ -209,63 +326,6 @@ The semantic model is the core mechanism that **constrains** the LLM to produce 
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
-### How It's Injected Into the LLM Prompt
-
-The `BUILD_ANNOTATION_PROMPT` function constructs a prompt that includes all three components:
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                        LLM PROMPT STRUCTURE                                  │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                              │
-│  "You are a document classification assistant..."                           │
-│                                                                              │
-│  INSTRUCTIONS:                                                               │
-│  1. Select exactly ONE category from the CATEGORIES list                    │
-│  2. Select ALL applicable tags from the TAGS list        ◄── CONSTRAINTS    │
-│  3. Write a 2-3 sentence summary                                            │
-│  4. Extract key terms (up to 10)                                            │
-│  5. Extract named entities                                                   │
-│  6. Provide a confidence score (0.0 to 1.0)                                 │
-│                                                                              │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │ AVAILABLE CATEGORIES (loaded from SEMANTIC.CATEGORIES):               │  │
-│  │ - Contract: Legal agreements including NDAs, MSAs, SOWs...            │  │
-│  │ - Policy: Internal policies including HR, security, IT...             │  │
-│  │ - Financial Report: Financial documents including quarterly...        │  │
-│  │ - Technical Document: Technical specifications, PRDs...               │  │
-│  │ - HR Document: Human resources documents including handbooks...       │  │
-│  │ ...                                                                   │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │ AVAILABLE TAGS (loaded from SEMANTIC.TAGS):                           │  │
-│  │ Confidential, Public, Internal, Restricted, Draft, Final, HIPAA,      │  │
-│  │ GDPR, SOC2, Legal-Review-Required, Contains-PII, Financial-Data...    │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-│  ┌───────────────────────────────────────────────────────────────────────┐  │
-│  │ DOMAIN GLOSSARY (loaded from SEMANTIC.GLOSSARY):                      │  │
-│  │ NDA: Non-Disclosure Agreement - a legal contract establishing...      │  │
-│  │ MSA: Master Service Agreement - an overarching contract...            │  │
-│  │ HIPAA: Health Insurance Portability and Accountability Act...         │  │
-│  │ ...                                                                   │  │
-│  └───────────────────────────────────────────────────────────────────────┘  │
-│                                                                              │
-│  DOCUMENT TEXT:                                                              │
-│  [First 50,000 characters of the parsed document]                           │
-│                                                                              │
-│  Respond with ONLY valid JSON in this exact format:                         │
-│  {                                                                           │
-│    "category": "<category_name>",                                           │
-│    "tags": ["<tag1>", "<tag2>"],                                            │
-│    "summary": "...",                                                         │
-│    ...                                                                       │
-│  }                                                                           │
-│                                                                              │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
-
 ### The Annotation Flow
 
 ```
@@ -290,21 +350,6 @@ The `BUILD_ANNOTATION_PROMPT` function constructs a prompt that includes all thr
 │  9. Store annotation in PROCESSED.ANNOTATIONS                 │
 │                                                               │
 └──────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌──────────────────────────────────────────────────────────────┐
-│                    ANNOTATIONS Table                          │
-│                                                               │
-│  document_id: 1                                               │
-│  category_id: 101  ───────► FK to SEMANTIC.CATEGORIES         │
-│  tags: ["Confidential", "Legal-Review-Required"]              │
-│  summary: "This is a mutual non-disclosure agreement..."      │
-│  key_terms: ["confidential information", "trade secrets"...]  │
-│  entities: {people: [...], organizations: [...], ...}         │
-│  confidence: 0.92                                             │
-│  model_name: "claude-sonnet-4-5"                              │
-│                                                               │
-└──────────────────────────────────────────────────────────────┘
 ```
 
 ### Why This Approach?
@@ -317,18 +362,6 @@ The `BUILD_ANNOTATION_PROMPT` function constructs a prompt that includes all thr
 | **Domain Alignment** | Glossary helps LLM understand industry-specific terms correctly |
 | **Auditability** | You can trace exactly what options the LLM was given |
 | **Extensibility** | Add new categories/tags to the tables, and all future annotations use them |
-
-### Example: How Glossary Helps
-
-Without glossary:
-- LLM sees "NDA" in document
-- Might not know what it means
-- Could misclassify as "Correspondence" or "Other"
-
-With glossary:
-- LLM sees "NDA: Non-Disclosure Agreement - a legal contract establishing confidentiality"
-- Understands this is a legal document
-- Correctly classifies as "Contract"
 
 ### Customizing the Semantic Model
 
@@ -346,13 +379,21 @@ INSERT INTO DOC_INTELLIGENCE.SEMANTIC.GLOSSARY (term, definition)
 VALUES ('IPO', 'Initial Public Offering - the first sale of stock by a company to the public');
 ```
 
-After updating the semantic model, all future annotations will automatically use the new options.
+## Schemas
+
+| Schema | Purpose |
+|--------|---------|
+| `RAW` | Raw document storage and ingestion |
+| `PROCESSED` | Parsed content, chunks, and annotations |
+| `SEMANTIC` | Taxonomy tables (categories, tags, glossary) |
+| `EXPERIMENT` | Milestone 8 ontology experiment (isolated) |
 
 ## Requirements
 
 - Snowflake account with Cortex access
 - SNOWFLAKE.CORTEX_USER database role (or equivalent)
 - Storage integration (for S3 external stage - optional)
+- Snow CLI (for deployment)
 
 ## Configuration
 
@@ -361,6 +402,21 @@ Edit `config/settings.sql` to customize:
 - Warehouse size
 - S3 bucket path (for external stage)
 - Target lag for search service
+
+## Useful Commands
+
+```bash
+# Deploy Streamlit app
+snow streamlit deploy --connection <connection_name>
+
+# Upload files to stage
+snow object stage copy <file> @DOC_INTELLIGENCE.RAW.INTERNAL_DOCUMENTS_STAGE/ \
+    --overwrite --connection <connection_name>
+
+# List stage contents
+snow object stage list @DOC_INTELLIGENCE.RAW.INTERNAL_DOCUMENTS_STAGE/ \
+    --connection <connection_name>
+```
 
 ## License
 
