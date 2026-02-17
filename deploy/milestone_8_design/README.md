@@ -405,14 +405,422 @@ For most enterprise deployments, **Option 2 (Scheduled Cache with JSON-LD)** pro
 
 ---
 
+## Proof of Concept: JSON-LD Cache Experiment (DEPLOYED)
+
+A working proof-of-concept for **Option 2 (Scheduled Cache)** has been deployed to Snowflake. This experiment is **isolated** in the `EXPERIMENT` schema and does not affect the existing pipeline.
+
+**Status:** DEPLOYED AND TESTED
+
+---
+
+### Deployed Components
+
+#### Schema
+
+```
+DOC_INTELLIGENCE.EXPERIMENT
+```
+
+#### Tables
+
+| Table | Purpose |
+|-------|---------|
+| `ONTOLOGY_CACHE` | Stores JSON-LD ontologies with versioning |
+| `EXPERIMENT_ANNOTATIONS` | Stores ontology-based annotation results |
+| `EXPERIMENT_COMPARISON` | Comparison between flat and ontology methods |
+
+#### Functions
+
+| Function | Purpose |
+|----------|---------|
+| `GET_ONTOLOGY_CLASSES(ontology_name)` | Extracts all classes from JSON-LD |
+| `GET_ONTOLOGY_HIERARCHY(ontology_name)` | Builds hierarchical text for LLM prompts |
+| `GET_TAG_GROUPS(ontology_name)` | Extracts tag groups with exclusivity rules |
+| `BUILD_ONTOLOGY_PROMPT(doc_text, ontology_name)` | Generates complete LLM prompt from JSON-LD |
+
+#### Procedures
+
+| Procedure | Purpose |
+|-----------|---------|
+| `ANNOTATE_WITH_ONTOLOGY(doc_id, ontology_name)` | Annotates a document using the ontology |
+| `COMPARE_ANNOTATION_METHODS(doc_id, ontology_name)` | Compares flat vs ontology results |
+
+#### Loaded Ontology
+
+| Property | Value |
+|----------|-------|
+| Name | `EnterpriseDocumentOntology` |
+| Version | `1.0.0` |
+| Classes | 21 |
+| Tag Groups | 3 |
+| Source | AnzoGraph (Simulated) |
+
+---
+
+### Sample Ontology Structure
+
+```
+Document (root)
+├── Legal Document [Tags: Legal-Review-Required]
+│   ├── Contract [Tags: Legal-Review-Required, Requires-Signature]
+│   │   ├── NDA (Also known as: Confidentiality Agreement, CDA) [Tags: Confidential, Contains-PII]
+│   │   ├── MSA (Also known as: Framework Agreement) [Tags: Vendor-Related]
+│   │   ├── SOW (Also known as: Work Order) [Tags: Vendor-Related, Financial-Data]
+│   │   └── Employment Agreement (Also known as: Offer Letter) [Tags: Confidential, HR-Related]
+│   └── Policy [Tags: Internal]
+│       ├── Security Policy (Also known as: InfoSec Policy) [Tags: Internal, SOC2]
+│       ├── HR Policy [Tags: Internal, HR-Related]
+│       └── Privacy Policy (Also known as: GDPR Policy) [Tags: GDPR, Contains-PII]
+├── Financial Document [Tags: Financial-Data]
+│   ├── Quarterly Report (Also known as: 10-Q) [Tags: Financial-Data, Investor-Relations]
+│   └── Annual Report (Also known as: 10-K) [Tags: Financial-Data, Public]
+├── Technical Document [Tags: Internal]
+│   ├── PRD (Also known as: Requirements Doc) [Tags: Internal, Draft]
+│   ├── Architecture Document (Also known as: Design Doc) [Tags: Internal, Technical]
+│   └── API Documentation (Also known as: API Docs) [Tags: Technical, Customer-Facing]
+└── Healthcare Document [Tags: HIPAA, Restricted]
+    ├── Medical Record (Also known as: Patient Record) [Tags: HIPAA, Confidential]
+    └── BAA (Also known as: HIPAA BAA) [Tags: HIPAA, Legal-Review-Required]
+```
+
+### Tag Groups (Mutual Exclusivity Rules)
+
+| Group | Rule | Options |
+|-------|------|---------|
+| Confidentiality Level | Select ONE | Public, Internal, Confidential, Restricted |
+| Document Status | Select ONE | Draft, Under-Review, Final, Archived |
+| Compliance Framework | Select ALL that apply | HIPAA, GDPR, SOC2, PCI-DSS |
+
+---
+
+## Step-by-Step Testing Guide
+
+### Prerequisites
+
+1. Access to Snowflake account with `DOC_INTELLIGENCE` database
+2. Documents already processed through the main pipeline (status = ANNOTATED)
+3. Connection configured (e.g., `uswest2demo`)
+
+### Step 1: Verify Deployment
+
+```sql
+-- Check schema exists
+SHOW SCHEMAS IN DATABASE DOC_INTELLIGENCE;
+
+-- Check tables exist
+SELECT table_name 
+FROM DOC_INTELLIGENCE.INFORMATION_SCHEMA.TABLES 
+WHERE table_schema = 'EXPERIMENT';
+```
+
+Expected output:
+```
+TABLE_NAME
+------------------------
+EXPERIMENT_COMPARISON
+ONTOLOGY_CACHE
+EXPERIMENT_ANNOTATIONS
+```
+
+### Step 2: Verify Ontology is Loaded
+
+```sql
+-- Check ontology cache
+SELECT 
+    ontology_name, 
+    version, 
+    class_count, 
+    source_system,
+    is_current 
+FROM DOC_INTELLIGENCE.EXPERIMENT.ONTOLOGY_CACHE;
+```
+
+Expected output:
+```
+ONTOLOGY_NAME               | VERSION | CLASS_COUNT | SOURCE_SYSTEM         | IS_CURRENT
+----------------------------+---------+-------------+-----------------------+-----------
+EnterpriseDocumentOntology  | 1.0.0   | 21          | AnzoGraph (Simulated) | True
+```
+
+### Step 3: View the Generated Hierarchy
+
+```sql
+-- See how JSON-LD is transformed into LLM prompt text
+SELECT DOC_INTELLIGENCE.EXPERIMENT.GET_ONTOLOGY_HIERARCHY('EnterpriseDocumentOntology') 
+AS category_hierarchy;
+```
+
+This shows the hierarchical category list that will be injected into LLM prompts.
+
+### Step 4: View Tag Groups
+
+```sql
+-- See tag groups with mutual exclusivity rules
+SELECT DOC_INTELLIGENCE.EXPERIMENT.GET_TAG_GROUPS('EnterpriseDocumentOntology') 
+AS tag_groups;
+```
+
+Expected output:
+```
+Compliance Framework (select all that apply): HIPAA, GDPR, SOC2, PCI-DSS
+Confidentiality Level (select ONE): Public, Internal, Confidential, Restricted
+Document Status (select ONE): Draft, Under-Review, Final, Archived
+```
+
+### Step 5: Check Available Documents
+
+```sql
+-- List documents available for annotation
+SELECT 
+    document_id, 
+    file_name, 
+    status 
+FROM DOC_INTELLIGENCE.RAW.DOCUMENTS 
+WHERE status IN ('PARSED', 'ANNOTATED', 'COMPLETED');
+```
+
+### Step 6: Annotate a Document with Ontology
+
+```sql
+-- Annotate the NDA document (document_id = 3)
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(3, 'EnterpriseDocumentOntology');
+```
+
+Expected output:
+```
+Successfully annotated document 3 using ontology EnterpriseDocumentOntology
+```
+
+### Step 7: View Annotation Results
+
+```sql
+-- View the ontology-based annotation
+SELECT 
+    document_id,
+    category_path,
+    category_label,
+    tags,
+    confidence,
+    summary
+FROM DOC_INTELLIGENCE.EXPERIMENT.EXPERIMENT_ANNOTATIONS
+WHERE document_id = 3;
+```
+
+Expected result for NDA:
+```
+CATEGORY_PATH: Legal Document > Contract > Non-Disclosure Agreement
+CATEGORY_LABEL: Non-Disclosure Agreement
+TAGS: ["Confidential", "Contains-PII", "Legal-Review-Required", "Requires-Signature", "Final"]
+CONFIDENCE: 0.98
+```
+
+### Step 8: Annotate Additional Documents
+
+```sql
+-- Annotate MSA
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(2, 'EnterpriseDocumentOntology');
+
+-- Annotate Quarterly Report
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(5, 'EnterpriseDocumentOntology');
+
+-- Annotate Security Policy
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(6, 'EnterpriseDocumentOntology');
+
+-- Annotate PRD
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(4, 'EnterpriseDocumentOntology');
+```
+
+### Step 9: View All Results Summary
+
+```sql
+-- Summary of all ontology annotations
+SELECT 
+    d.file_name,
+    e.category_path,
+    e.category_label,
+    e.confidence,
+    ARRAY_TO_STRING(e.tags, ', ') as tags
+FROM DOC_INTELLIGENCE.EXPERIMENT.EXPERIMENT_ANNOTATIONS e
+JOIN DOC_INTELLIGENCE.RAW.DOCUMENTS d ON e.document_id = d.document_id
+ORDER BY e.document_id;
+```
+
+### Expected Test Results
+
+| Document | Category Path | Confidence |
+|----------|---------------|------------|
+| msa_riverside_cloudmed.txt | Legal Document > Contract > Master Service Agreement | 95% |
+| nda_acme_techstart.txt | Legal Document > Contract > Non-Disclosure Agreement | 98% |
+| prd_datasync_v3.txt | Technical Document > Product Requirements Document | 95% |
+| quarterly_report_nexgen_q4_2024.txt | Financial Document > Quarterly Report | 95% |
+| security_policy_globex.txt | Legal Document > Policy > Security Policy | 95% |
+
+---
+
+## How It Works: The Workflow
+
+```
+┌─────────────────────────────────────────────────────────────────────────────────┐
+│                    JSON-LD ONTOLOGY ANNOTATION WORKFLOW                          │
+├─────────────────────────────────────────────────────────────────────────────────┤
+│                                                                                  │
+│  ┌──────────────────┐                                                            │
+│  │  ONTOLOGY_CACHE  │ ◄─── JSON-LD stored in VARIANT column                      │
+│  │  (JSON-LD)       │      Contains @graph with classes, hierarchies, synonyms   │
+│  └────────┬─────────┘                                                            │
+│           │                                                                      │
+│           ▼                                                                      │
+│  ┌──────────────────────────────────────────────────────────────────────┐       │
+│  │  GET_ONTOLOGY_HIERARCHY()                                             │       │
+│  │                                                                       │       │
+│  │  1. LATERAL FLATTEN on json_ld:"@graph"                              │       │
+│  │  2. Extract @id, rdfs:label, rdfs:subClassOf, skos:altLabel          │       │
+│  │  3. Recursive CTE to build parent→child tree                         │       │
+│  │  4. LISTAGG to create indented text hierarchy                        │       │
+│  └────────┬─────────────────────────────────────────────────────────────┘       │
+│           │                                                                      │
+│           ▼                                                                      │
+│  ┌──────────────────────────────────────────────────────────────────────┐       │
+│  │  BUILD_ONTOLOGY_PROMPT(doc_text, ontology_name)                       │       │
+│  │                                                                       │       │
+│  │  Constructs prompt with:                                              │       │
+│  │  - Instructions (select MOST SPECIFIC category)                       │       │
+│  │  - Category hierarchy (from GET_ONTOLOGY_HIERARCHY)                   │       │
+│  │  - Tag groups with exclusivity rules (from GET_TAG_GROUPS)           │       │
+│  │  - Document text (first 50,000 chars)                                │       │
+│  │  - JSON output format specification                                   │       │
+│  └────────┬─────────────────────────────────────────────────────────────┘       │
+│           │                                                                      │
+│           ▼                                                                      │
+│  ┌──────────────────────────────────────────────────────────────────────┐       │
+│  │  ANNOTATE_WITH_ONTOLOGY(doc_id, ontology_name)                        │       │
+│  │                                                                       │       │
+│  │  1. Load document chunks from DOCUMENT_CHUNKS                         │       │
+│  │  2. Build prompt using BUILD_ONTOLOGY_PROMPT                          │       │
+│  │  3. Call SNOWFLAKE.CORTEX.COMPLETE('claude-3-5-sonnet', prompt)      │       │
+│  │  4. Parse JSON response                                               │       │
+│  │  5. Store in EXPERIMENT_ANNOTATIONS                                   │       │
+│  └────────┬─────────────────────────────────────────────────────────────┘       │
+│           │                                                                      │
+│           ▼                                                                      │
+│  ┌──────────────────┐                                                            │
+│  │ EXPERIMENT_      │ ◄─── Results with:                                         │
+│  │ ANNOTATIONS      │      - category_path (hierarchical)                        │
+│  │                  │      - category_label (most specific)                      │
+│  │                  │      - tags (respecting exclusivity)                       │
+│  │                  │      - summary, key_terms, entities                        │
+│  └──────────────────┘                                                            │
+│                                                                                  │
+└─────────────────────────────────────────────────────────────────────────────────┘
+```
+
+---
+
+## Key Differences: Flat vs Ontology Annotation
+
+| Aspect | Flat Model (Milestones 1-7) | Ontology Model (Milestone 8) |
+|--------|------------------------------|-------------------------------|
+| Categories | 10 flat options | 21 hierarchical classes |
+| Structure | Single level | Multi-level (Document > Legal > Contract > NDA) |
+| Output | `category: "Contract"` | `category_path: "Legal Document > Contract > NDA"` |
+| Synonyms | Not supported | `skos:altLabel` included in prompt |
+| Suggested Tags | Manual | Per-class suggestions from ontology |
+| Tag Rules | None | Mutual exclusivity enforced |
+| Source | Snowflake tables | JSON-LD (from AnzoGraph) |
+
+---
+
+## Extending the Ontology
+
+To add new document types:
+
+```sql
+-- 1. Export current ontology
+SELECT json_ld FROM DOC_INTELLIGENCE.EXPERIMENT.ONTOLOGY_CACHE 
+WHERE ontology_name = 'EnterpriseDocumentOntology' AND is_current = TRUE;
+
+-- 2. Modify JSON-LD (add new class to @graph array):
+-- {
+--   "@id": "ent:NewDocumentType",
+--   "@type": "rdfs:Class",
+--   "rdfs:subClassOf": {"@id": "ent:ParentClass"},
+--   "rdfs:label": "New Document Type",
+--   "rdfs:comment": "Description here",
+--   "skos:altLabel": ["Synonym1", "Synonym2"],
+--   "ent:suggestedTags": ["Tag1", "Tag2"]
+-- }
+
+-- 3. Insert new version
+INSERT INTO DOC_INTELLIGENCE.EXPERIMENT.ONTOLOGY_CACHE (
+    ontology_name, version, description, source_system, json_ld, class_count, is_current
+)
+VALUES (
+    'EnterpriseDocumentOntology',
+    '1.1.0',
+    'Added new document type',
+    'AnzoGraph (Simulated)',
+    PARSE_JSON('<modified JSON-LD>'),
+    22,
+    TRUE
+);
+
+-- 4. Mark old version as not current
+UPDATE DOC_INTELLIGENCE.EXPERIMENT.ONTOLOGY_CACHE 
+SET is_current = FALSE 
+WHERE version = '1.0.0';
+```
+
+---
+
+## Streamlit Demo App
+
+A dedicated Streamlit app has been created to showcase the ontology functionality interactively.
+
+**Location:** `deploy/milestone_8_design/streamlit_app/`
+
+### Features
+
+| Page | Description |
+|------|-------------|
+| **Overview** | Architecture diagram, metrics, key concepts |
+| **Hierarchy** | Visualize class hierarchy from JSON-LD |
+| **Tag Groups** | View mutual exclusivity rules |
+| **Annotate** | Run LLM annotation on documents |
+| **Results** | View annotations with confidence scores |
+
+### Deploy to Snowflake
+
+```sql
+-- Create stage for Streamlit files
+CREATE OR REPLACE STAGE DOC_INTELLIGENCE.EXPERIMENT.STREAMLIT_STAGE
+  DIRECTORY = (ENABLE = TRUE);
+
+-- Create the Streamlit app
+CREATE OR REPLACE STREAMLIT DOC_INTELLIGENCE.EXPERIMENT.ONTOLOGY_ANNOTATION_DEMO
+  ROOT_LOCATION = '@DOC_INTELLIGENCE.EXPERIMENT.STREAMLIT_STAGE/ontology_app'
+  MAIN_FILE = '/ontology_app.py'
+  QUERY_WAREHOUSE = DOC_INTELLIGENCE_WH
+  COMMENT = 'Milestone 8: Ontology-Based Document Annotation Demo';
+```
+
+Upload the app file:
+```bash
+snow stage copy deploy/milestone_8_design/streamlit_app/ontology_app.py \
+  @DOC_INTELLIGENCE.EXPERIMENT.STREAMLIT_STAGE/ontology_app/ \
+  --connection uswest2demo
+```
+
+See [streamlit_app/README.md](streamlit_app/README.md) for full deployment instructions.
+
+---
+
 ## Next Steps
 
 1. **Customer Review** - Present options and gather feedback
-2. **Select Option** - Confirm architectural direction
-3. **AnzoGraph Access** - Obtain endpoint URL, credentials, sample SPARQL
-4. **Prototype** - Build proof-of-concept for selected option
-5. **Testing** - Validate with subset of ontology
-6. **Production Deployment** - Full implementation
+2. **Run Experiment** - Demo the proof-of-concept with customer
+3. **Select Option** - Confirm architectural direction
+4. **AnzoGraph Access** - Obtain endpoint URL, credentials, sample SPARQL
+5. **Production Implementation** - Full integration with AnzoGraph
 
 ---
 

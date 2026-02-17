@@ -1,0 +1,8 @@
+name: ontology_demo
+channels:
+  - snowflake
+dependencies:
+  - python=3.10
+  - streamlit=1.35.0
+  - snowflake-snowpark-python=1.17.0
+  - pandas=2.0.3

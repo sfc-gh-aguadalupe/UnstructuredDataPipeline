@@ -584,6 +584,158 @@ After running the pipeline, you should see:
 
 ---
 
+## Milestone 8: Ontology-Based Annotation (Experiment)
+
+Milestone 8 introduces **hierarchical ontology-based annotation** using JSON-LD format. This is an experimental feature isolated in the `EXPERIMENT` schema.
+
+### Overview
+
+| Feature | Flat Model (Default) | Ontology Model (Milestone 8) |
+|---------|---------------------|------------------------------|
+| Categories | 10 flat options | 21 hierarchical classes |
+| Structure | Single level | Multi-level (e.g., `Legal Document > Contract > NDA`) |
+| Synonyms | Not supported | Included via `skos:altLabel` |
+| Tag Rules | None | Mutual exclusivity enforced |
+
+### Deployed Components
+
+**Schema:** `DOC_INTELLIGENCE.EXPERIMENT`
+
+**Tables:**
+| Table | Purpose |
+|-------|---------|
+| `ONTOLOGY_CACHE` | Stores JSON-LD ontology with versioning |
+| `EXPERIMENT_ANNOTATIONS` | Stores ontology-based annotation results |
+| `EXPERIMENT_COMPARISON` | Comparison between flat and ontology methods |
+
+**Functions:**
+| Function | Purpose |
+|----------|---------|
+| `GET_ONTOLOGY_HIERARCHY(ontology_name)` | Builds hierarchical text for LLM prompts |
+| `GET_TAG_GROUPS(ontology_name)` | Extracts tag groups with exclusivity rules |
+| `BUILD_ONTOLOGY_PROMPT(doc_text, ontology_name)` | Generates LLM prompt from JSON-LD |
+
+**Procedures:**
+| Procedure | Purpose |
+|-----------|---------|
+| `ANNOTATE_WITH_ONTOLOGY(doc_id, ontology_name)` | Annotates document using ontology |
+
+### Step-by-Step Testing
+
+#### Step 1: Verify Deployment
+
+```sql
+-- Check experiment schema exists
+SELECT table_name 
+FROM DOC_INTELLIGENCE.INFORMATION_SCHEMA.TABLES 
+WHERE table_schema = 'EXPERIMENT';
+```
+
+Expected: 3 tables (`ONTOLOGY_CACHE`, `EXPERIMENT_ANNOTATIONS`, `EXPERIMENT_COMPARISON`)
+
+#### Step 2: Verify Ontology is Loaded
+
+```sql
+-- Check ontology
+SELECT ontology_name, version, class_count, is_current 
+FROM DOC_INTELLIGENCE.EXPERIMENT.ONTOLOGY_CACHE;
+```
+
+Expected: `EnterpriseDocumentOntology` v1.0.0 with 21 classes
+
+#### Step 3: View Generated Hierarchy
+
+```sql
+-- See the hierarchy that gets injected into LLM prompts
+SELECT DOC_INTELLIGENCE.EXPERIMENT.GET_ONTOLOGY_HIERARCHY('EnterpriseDocumentOntology');
+```
+
+Sample output (truncated):
+```
+- Financial Document: Documents with financial data [Tags: Financial-Data]
+  - Annual Report: Yearly performance report (Also known as: 10-K) [Tags: Financial-Data, Public]
+  - Quarterly Report: Quarterly financial report (Also known as: 10-Q) [Tags: Financial-Data, Investor-Relations]
+- Legal Document: Documents with legal implications [Tags: Legal-Review-Required]
+  - Contract: Legally binding agreements [Tags: Legal-Review-Required, Requires-Signature]
+    - Non-Disclosure Agreement: Confidentiality agreement (Also known as: Confidentiality Agreement, CDA)
+    ...
+```
+
+#### Step 4: View Tag Groups
+
+```sql
+-- See tag groups with mutual exclusivity rules
+SELECT DOC_INTELLIGENCE.EXPERIMENT.GET_TAG_GROUPS('EnterpriseDocumentOntology');
+```
+
+Expected:
+```
+Compliance Framework (select all that apply): HIPAA, GDPR, SOC2, PCI-DSS
+Confidentiality Level (select ONE): Public, Internal, Confidential, Restricted
+Document Status (select ONE): Draft, Under-Review, Final, Archived
+```
+
+#### Step 5: Annotate Documents with Ontology
+
+```sql
+-- Annotate NDA document
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(3, 'EnterpriseDocumentOntology');
+
+-- Annotate MSA document
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(2, 'EnterpriseDocumentOntology');
+
+-- Annotate Quarterly Report
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(5, 'EnterpriseDocumentOntology');
+
+-- Annotate Security Policy
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(6, 'EnterpriseDocumentOntology');
+
+-- Annotate PRD
+CALL DOC_INTELLIGENCE.EXPERIMENT.ANNOTATE_WITH_ONTOLOGY(4, 'EnterpriseDocumentOntology');
+```
+
+#### Step 6: View Results
+
+```sql
+-- View all ontology-based annotations
+SELECT 
+    d.file_name,
+    e.category_path,
+    e.category_label,
+    e.confidence,
+    ARRAY_TO_STRING(e.tags, ', ') as tags
+FROM DOC_INTELLIGENCE.EXPERIMENT.EXPERIMENT_ANNOTATIONS e
+JOIN DOC_INTELLIGENCE.RAW.DOCUMENTS d ON e.document_id = d.document_id
+ORDER BY e.document_id;
+```
+
+### Expected Ontology Results
+
+| Document | Category Path | Confidence |
+|----------|---------------|------------|
+| msa_riverside_cloudmed.txt | Legal Document > Contract > Master Service Agreement | 95% |
+| nda_acme_techstart.txt | Legal Document > Contract > Non-Disclosure Agreement | 98% |
+| prd_datasync_v3.txt | Technical Document > Product Requirements Document | 95% |
+| quarterly_report_nexgen_q4_2024.txt | Financial Document > Quarterly Report | 95% |
+| security_policy_globex.txt | Legal Document > Policy > Security Policy | 95% |
+
+### Key Benefits Demonstrated
+
+1. **Hierarchical Classification**: Instead of flat "Contract", you get "Legal Document > Contract > NDA"
+2. **Synonym Recognition**: Document mentions "Confidentiality Agreement" → maps to NDA
+3. **Suggested Tags**: Each category has pre-defined tag suggestions from the ontology
+4. **Tag Exclusivity**: LLM respects mutual exclusivity rules (e.g., only one confidentiality level)
+
+### Full Documentation
+
+See `deploy/milestone_8_design/README.md` for:
+- Complete architecture and design options
+- Workflow diagrams
+- Comparison with flat model
+- Instructions for extending the ontology
+
+---
+
 ## Customizing the Semantic Model
 
 ### Adding a New Category
